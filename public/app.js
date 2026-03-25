@@ -1,20 +1,15 @@
 const API_URL = '/api'; 
 
-// ---- STATE ----
 let cart = JSON.parse(localStorage.getItem('cart')) || [];
 let products =[];
 
-// ---- INITIALIZATION ----
 if (window.location.pathname === '/' || window.location.pathname === '/index.html' || window.location.pathname === '') {
     loadProducts();
     updateCartUI();
     registerServiceWorker();
 }
 
-// ============================================
-// ---- SHOP FRONTEND LOGIC ----
-// ============================================
-
+// ---- SHOP FRONTEND ----
 async function loadProducts() {
     try {
         const res = await fetch(`${API_URL}/products`);
@@ -61,11 +56,10 @@ function addToCart(id) {
     }
 }
 
-// Function to handle + and - buttons in Cart
 function updateCartQty(idx, change) {
     cart[idx].qty += change;
     if (cart[idx].qty <= 0) {
-        cart.splice(idx, 1); // Remove item if qty is 0 or less
+        cart.splice(idx, 1);
     }
     saveCart();
     updateCartUI();
@@ -84,8 +78,6 @@ function updateCartUI() {
             <div class="flex-1">
                 <h5 class="text-sm font-bold text-gray-800 leading-tight mb-1" title="${item.name}">${item.name}</h5>
                 <p class="text-[#e76f51] text-xs font-semibold mb-2">৳ ${item.price} / per</p>
-                
-                <!-- Plus/Minus Buttons -->
                 <div class="flex items-center gap-2">
                     <button onclick="updateCartQty(${idx}, -1)" class="w-7 h-7 flex items-center justify-center rounded bg-gray-200 text-gray-700 hover:bg-red-200 transition">
                         <i class="fas fa-minus text-xs"></i>
@@ -112,7 +104,6 @@ function removeCart(idx) { cart.splice(idx, 1); saveCart(); updateCartUI(); }
 function saveCart() { localStorage.setItem('cart', JSON.stringify(cart)); }
 function toggleCart() { document.getElementById('cartPanel').classList.toggle('translate-x-full'); }
 
-// ---- CHECKOUT ----
 function openCheckout() {
     if(cart.length === 0) return alert('আপনার কার্ট খালি!');
     document.getElementById('checkoutModal').classList.remove('hidden');
@@ -158,7 +149,6 @@ async function placeOrder() {
         const result = await res.json();
         
         if(typeof trackPixel === 'function') trackPixel('Purchase');
-        
         generatePDFInvoice(data, result.orderId);
         
         alert("অর্ডার সফলভাবে প্লেস হয়েছে! অর্ডার আইডি: " + result.orderId);
@@ -175,7 +165,6 @@ async function placeOrder() {
         waMsg += `\n*সর্বমোট মূল্য:* ${data.total} টাকা`;
         
         cart =[]; saveCart(); updateCartUI(); closeCheckout();
-        
         window.open(`https://wa.me/8801580567606?text=${encodeURIComponent(waMsg)}`, '_blank');
         
     } catch (e) { 
@@ -197,7 +186,6 @@ function generatePDFInvoice(data, orderId) {
     doc.save(`Pollirshad_Invoice_${orderId}.pdf`);
 }
 
-// ---- AI CHATBOT ----
 function toggleChat() {
     const chat = document.getElementById('chatBox');
     if(chat) chat.classList.toggle('hidden');
@@ -229,13 +217,6 @@ function sendMessage() {
 async function adminLogin() {
     const u = document.getElementById('adminUser').value;
     const p = document.getElementById('adminPass').value;
-    const btn = document.getElementById('loginBtn');
-    
-    // লোডিং অ্যানিমেশন চালু করা (সার্ভার চালু হতে সময় নিলে ইউজার বুঝতে পারবে)
-    const originalText = btn.innerText;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> সার্ভার লোড হচ্ছে...';
-    btn.disabled = true;
-    btn.classList.add('opacity-70', 'cursor-not-allowed');
     
     try {
         const res = await fetch(`${API_URL}/auth/login`, {
@@ -253,12 +234,7 @@ async function adminLogin() {
             alert("ভুল ইউজারনেম বা পাসওয়ার্ড!"); 
         }
     } catch(err) {
-        alert("সার্ভার এরর অথবা সার্ভার স্লিপ মোডে আছে। দয়া করে ১০-২০ সেকেন্ড অপেক্ষা করে আবার লগইন করুন।");
-    } finally {
-        // লোডিং অ্যানিমেশন বন্ধ করা
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-        btn.classList.remove('opacity-70', 'cursor-not-allowed');
+        alert("সার্ভার এরর।");
     }
 }
 
@@ -267,103 +243,17 @@ function logout() {
     window.location.reload();
 }
 
-// ---- SECURE: DELETE ALL ORDERS ----
+// ---- NEW: DELETE ALL ORDERS RESET BUTTON ----
 async function clearAllOrders() {
-    const pass = prompt("অত্যন্ত গোপনীয়! সকল অর্ডার মুছতে অ্যাডমিন পাসওয়ার্ড দিন:");
-    if (pass === null) return; 
-    if (pass === '') return alert("পাসওয়ার্ড দেওয়া হয়নি!");
-
+    if(!confirm("আপনি কি নিশ্চিত যে আপনি সমস্ত ডেমো অর্ডার মুছে ফেলতে চান? এটি আর ফিরে পাওয়া যাবে না।")) return;
+    
     try {
-        const res = await fetch(`${API_URL}/orders/clear`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ password: pass })
-        });
-        const data = await res.json();
-        
-        if (res.ok) {
-            alert("✅ " + data.message);
-            loadAdminData();
-        } else {
-            alert("❌ " + data.message);
-        }
+        await fetch(`${API_URL}/orders`, { method: 'DELETE' });
+        alert("✅ সব অর্ডার সফলভাবে মুছে ফেলা হয়েছে!");
+        loadAdminData(); // Refresh the table
     } catch(err) {
         alert("অর্ডার মুছতে সমস্যা হয়েছে।");
     }
-}
-
-// Helper to render rows for both tables
-function generateOrderRowHTML(o) {
-    let badgeColor = 'bg-yellow-100 text-yellow-800 border-yellow-200';
-    if(o.status === 'Processing') badgeColor = 'bg-blue-100 text-blue-800 border-blue-200';
-    if(o.status === 'Delivered') badgeColor = 'bg-green-100 text-green-800 border-green-200';
-    if(o.status === 'Deleted') badgeColor = 'bg-red-100 text-red-800 border-red-200';
-
-    let paymentInfo = '';
-    if(o.paymentMethod === 'Cash on Delivery') {
-        paymentInfo = `<span class="text-[#e76f51] font-bold px-2 py-1 bg-orange-50 rounded border border-orange-200 text-xs">COD</span>`;
-    } else {
-        paymentInfo = `
-            <div class="text-xs leading-tight bg-gray-50 p-2 rounded border">
-                <strong class="text-gray-800">${o.paymentMethod}</strong><br>
-                <span class="text-gray-500">No:</span> ${o.senderPhone || 'N/A'}<br>
-                <span class="text-gray-500">TrxID:</span> <span class="font-mono">${o.trxId || 'N/A'}</span>
-            </div>`;
-    }
-
-    let itemsHtml = (o.items ||[]).map((i, index) => `
-        <div class="text-xs text-gray-800 bg-orange-50 border border-orange-100 shadow-sm rounded px-2 py-1.5 mb-1.5 whitespace-normal leading-tight">
-            <span class="font-bold text-gray-500 mr-1">${index + 1}.</span> 
-            <span class="font-bold text-[#e76f51] mr-1">${i.qty}x</span> 
-            ${i.name}
-        </div>
-    `).join('');
-
-    // If order is deleted, show a faded red background row
-    const rowClass = o.status === 'Deleted' ? 'bg-red-50 opacity-80' : 'hover:bg-gray-50';
-    
-    // Format Date
-    let dateStr = 'N/A';
-    if(o.createdAt) {
-        const d = new Date(o.createdAt);
-        dateStr = d.toLocaleDateString('bn-BD') + ' ' + d.toLocaleTimeString('bn-BD', {hour: '2-digit', minute:'2-digit'});
-    }
-
-    return `
-    <tr class="border-b transition-colors ${rowClass}">
-        <td class="p-3">
-            <div class="font-bold text-gray-800">${o.customerName}</div>
-            <div class="text-xs text-gray-500 mt-1"><i class="fas fa-phone-alt"></i> ${o.phone}</div>
-            <div class="text-[10px] text-gray-400 mt-1">${dateStr}</div>
-        </td>
-        <td class="p-3 text-xs text-gray-600 max-w-[150px] whitespace-normal">
-            ${o.address}
-        </td>
-        <td class="p-3 hidden md:table-cell">
-            ${paymentInfo}
-        </td>
-        <td class="p-3 min-w-[200px] max-w-[280px]">
-            <div class="max-h-24 overflow-y-auto pr-1 custom-scroll">
-                ${itemsHtml || '<span class="text-gray-400 text-xs">No items</span>'}
-            </div>
-        </td>
-        <td class="p-3 font-bold text-gray-800 text-base">
-            ৳ ${o.total}
-        </td>
-        <td class="p-3">
-            <span class="${badgeColor} px-2 py-1 rounded text-xs font-semibold shadow-sm border">${o.status}</span>
-        </td>
-        <td class="p-3">
-            <select onchange="updateOrderStatus('${o._id}', this.value)" class="border border-gray-300 rounded p-1 text-xs bg-white cursor-pointer hover:border-[#2d5a27] outline-none">
-                <option disabled ${!['Pending','Processing','Delivered','Deleted'].includes(o.status) ? 'selected' : ''}>স্ট্যাটাস পরিবর্তন</option>
-                <option value="Pending" ${o.status === 'Pending' ? 'selected' : ''}>Pending (রিস্টোর)</option>
-                <option value="Processing" ${o.status === 'Processing' ? 'selected' : ''}>Processing</option>
-                <option value="Delivered" ${o.status === 'Delivered' ? 'selected' : ''}>Delivered</option>
-                <option value="Deleted" ${o.status === 'Deleted' ? 'selected' : ''}>Delete (মুছুন)</option>
-            </select>
-        </td>
-    </tr>
-    `;
 }
 
 async function loadAdminData() {
@@ -376,18 +266,73 @@ async function loadAdminData() {
         document.getElementById('statPending').innerText = stats.pendingCount;
 
         const ordRes = await fetch(`${API_URL}/orders`);
-        const allOrders = await ordRes.json();
+        const orders = await ordRes.json();
+        const tbody = document.getElementById('ordersTableBody');
         
-        // 1. Dashboard Table (Only Active Orders, limit to 10)
-        const activeOrders = allOrders.filter(o => o.status !== 'Deleted');
-        const tbodyDash = document.getElementById('ordersTableBody');
-        if(tbodyDash) tbodyDash.innerHTML = activeOrders.slice(0, 10).map(generateOrderRowHTML).join('');
+        if(tbody) {
+            tbody.innerHTML = orders.map(o => {
+                let badgeColor = 'bg-yellow-100 text-yellow-800 border-yellow-200';
+                if(o.status === 'Processing') badgeColor = 'bg-blue-100 text-blue-800 border-blue-200';
+                if(o.status === 'Delivered') badgeColor = 'bg-green-100 text-green-800 border-green-200';
 
-        // 2. Orders Tab Table (ALL Orders including Deleted)
-        const tbodyAll = document.getElementById('allOrdersTableBody');
-        if(tbodyAll) tbodyAll.innerHTML = allOrders.map(generateOrderRowHTML).join('');
+                let paymentInfo = '';
+                if(o.paymentMethod === 'Cash on Delivery') {
+                    paymentInfo = `<span class="text-[#e76f51] font-bold px-2 py-1 bg-orange-50 rounded border border-orange-200 text-xs">COD</span>`;
+                } else {
+                    paymentInfo = `
+                        <div class="text-xs leading-tight bg-gray-50 p-2 rounded border">
+                            <strong class="text-gray-800">${o.paymentMethod}</strong><br>
+                            <span class="text-gray-500">No:</span> ${o.senderPhone || 'N/A'}<br>
+                            <span class="text-gray-500">TrxID:</span> <span class="font-mono">${o.trxId || 'N/A'}</span>
+                        </div>`;
+                }
 
-        // Chart
+                // ---- FORMAT ORDERED ITEMS (SERIAL 1, 2, 3...) ----
+                let itemsHtml = (o.items ||[]).map((i, index) => `
+                    <div class="text-xs text-gray-800 bg-orange-50 border border-orange-100 shadow-sm rounded px-2 py-1.5 mb-1.5 whitespace-normal leading-tight">
+                        <span class="font-bold text-gray-500 mr-1">${index + 1}.</span> 
+                        <span class="font-bold text-[#e76f51] mr-1">${i.qty}x</span> 
+                        ${i.name}
+                    </div>
+                `).join('');
+
+                return `
+                <tr class="border-b hover:bg-gray-50 transition-colors">
+                    <td class="p-3">
+                        <div class="font-bold text-gray-800">${o.customerName}</div>
+                        <div class="text-xs text-gray-500 mt-1"><i class="fas fa-phone-alt"></i> ${o.phone}</div>
+                    </td>
+                    <td class="p-3 text-xs text-gray-600 max-w-[150px] whitespace-normal">
+                        ${o.address}
+                    </td>
+                    <td class="p-3">
+                        ${paymentInfo}
+                    </td>
+                    <!-- RENDER ITEMS HERE WITH SCROLLBAR -->
+                    <td class="p-3 min-w-[220px] max-w-[280px]">
+                        <div class="max-h-24 overflow-y-auto pr-1 custom-scroll">
+                            ${itemsHtml || '<span class="text-gray-400 text-xs">No items</span>'}
+                        </div>
+                    </td>
+                    <td class="p-3 font-bold text-gray-800 text-base">
+                        ৳ ${o.total}
+                    </td>
+                    <td class="p-3">
+                        <span class="${badgeColor} px-2 py-1 rounded text-xs font-semibold shadow-sm border">${o.status}</span>
+                    </td>
+                    <td class="p-3">
+                        <select onchange="updateOrderStatus('${o._id}', this.value)" class="border border-gray-300 rounded p-1 text-xs bg-white cursor-pointer hover:border-[#2d5a27] outline-none">
+                            <option disabled selected>স্ট্যাটাস পরিবর্তন</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Processing">Processing</option>
+                            <option value="Delivered">Delivered</option>
+                        </select>
+                    </td>
+                </tr>
+                `;
+            }).join('');
+        }
+
         const chartCanvas = document.getElementById('salesChart');
         if(chartCanvas && !window.mySalesChart) {
             const ctx = chartCanvas.getContext('2d');
@@ -402,27 +347,33 @@ async function loadAdminData() {
                         borderRadius: 4
                     }]
                 },
-                options: { responsive: true, maintainAspectRatio: false }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
             });
         }
-    } catch(err) { console.error("Failed to load admin data", err); }
+    } catch(err) {
+        console.error("Failed to load admin data", err);
+    }
 }
 
-// ---- SECURE: UPDATE SINGLE STATUS ----
 async function updateOrderStatus(id, status) {
-    let payload = { status };
-
-    if (status === 'Deleted') {
-        const pass = prompt("এই অর্ডারটি মুছতে অ্যাডমিন পাসওয়ার্ড দিন:");
-        if (pass === null) { loadAdminData(); return; }
-        if (pass === '') { alert("পাসওয়ার্ড দেওয়া হয়নি!"); loadAdminData(); return; }
-        payload.password = pass;
-    }
-
     try {
-        const res = await fetch(`${API_URL}/orders/${id}/status`, {
+        await fetch(`${API_URL}/orders/${id}/status`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify({ status })
         });
-        const data = await res.js
+        alert(`অর্ডার স্ট্যাটাস আপডেট হয়েছে: ${status}`);
+        loadAdminData(); 
+    } catch(err) {
+        alert("স্ট্যাটাস আপডেট ব্যর্থ হয়েছে।");
+    }
+}
+
+function registerServiceWorker() {
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js').then(() => console.log('✅ PWA SW Registered'));
+    }
+}

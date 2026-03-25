@@ -39,14 +39,31 @@ const Order = mongoose.model('Order', OrderSchema);
 // --- SEED INITIAL DATA ---
 async function seedData() {
     try {
-        const count = await Product.countDocuments();
-        if(count === 0) {
-            await Product.insertMany([
-                { vendorId: 'v1', name: 'খাটি সরিষার তেল (১ লিটার)', category: 'Grocery', price: 250, stock: 50, image: 'https://images.unsplash.com/photo-1620706857370-e1b9770e8bb1?auto=format&fit=crop&w=300' }
-                // (Your exact product list continues here in production)
-            ]);
-        }
-    } catch (err) {}
+        await Product.deleteMany({});
+        await Product.insertMany([
+            { vendorId: 'v1', name: 'খেজুরের গুড় (পাটালি)', category: 'গুড় ও মধু', price: 350, stock: 50, image: 'images/খেজুরের গুড় (পাটালি)1.jpg' },
+            { vendorId: 'v1', name: 'ঝোলা গুড় (১ কেজি)', category: 'গুড় ও মধু', price: 350, stock: 50, image: 'images/ঝোলা গুড় (১ কেজি)1.jpg' },
+            { vendorId: 'v2', name: 'আখেঁর দানাদার গুড় (১ কেজি)', category: 'গুড় ও মধু', price: 250, stock: 100, image: 'images/আখেঁর দানাদার গুড় (১ কেজি)1.jpg' },
+            { vendorId: 'v2', name: 'চকলেট গুড় (১ কেজি)', category: 'গুড় ও মধু', price: 700, stock: 40, image: 'images/চকলেট গুড় (১ কেজি)1.jpg' },
+            { vendorId: 'v1', name: 'ঘি (১ কেজি)', category: 'গুড় ও মধু', price: 1600, stock: 30, image: 'images/ঘি1.jpg' },
+            { vendorId: 'v1', name: 'ঘি (২৫০ গ্রাম)', category: 'গুড় ও মধু', price: 400, stock: 50, image: 'images/ঘি1.jpg' },
+            { vendorId: 'v2', name: 'সরিষা মধু (১ কেজি)', category: 'গুড় ও মধু', price: 600, stock: 40, image: 'images/সরিষা মধু (১ কেজি)1.jpg' },
+            { vendorId: 'v2', name: 'লিচু ফুলের মধু (১ কেজি)', category: 'গুড় ও মধু', price: 1000, stock: 40, image: 'images/লিচু ফুলের মধু (১ কেজি)1.jpg' },
+            { vendorId: 'v1', name: 'প্রাকৃতিক ফুলের মধু (১ কেজি)', category: 'গুড় ও মধু', price: 1600, stock: 50, image: 'images/প্রাকৃতিক ফুলের মধু (১ কেজি)1.jpg' },
+            { vendorId: 'v1', name: 'সরিষার তেল (১ কেজি)', category: 'তেল ও মসলা', price: 230, stock: 100, image: 'images/সরিষার তেল (১ কেজি)1.jpg' },
+            { vendorId: 'v2', name: 'হলুদ গুড়া (১ কেজি)', category: 'তেল ও মসলা', price: 480, stock: 50, image: 'images/হলুদ.jpg' },
+            { vendorId: 'v2', name: 'হলুদ গুড়া (২৫০ গ্রাম)', category: 'তেল ও মসলা', price: 120, stock: 80, image: 'images/হলুদ.jpg' },
+            { vendorId: 'v1', name: 'মরিচ গুড়া (১ কেজি)', category: 'তেল ও মসলা', price: 600, stock: 50, image: 'images/মরিচ.jpg' },
+            { vendorId: 'v1', name: 'মরিচ গুড়া (২৫০ গ্রাম)', category: 'তেল ও মসলা', price: 150, stock: 80, image: 'images/মরিচ.jpg' },
+            { vendorId: 'v2', name: 'ধনিয়া গুড়া (১ কেজি)', category: 'তেল ও মসলা', price: 450, stock: 60, image: 'images/ধনিয়া গুড়া1.jpg' },
+            { vendorId: 'v2', name: 'ধনিয়া গুড়া (২৫০ গ্রাম)', category: 'তেল ও মসলা', price: 112, stock: 80, image: 'images/ধনিয়া গুড়া1.jpg' },
+            { vendorId: 'v1', name: 'কালোজিরা পোলাও চাল (১ কেজি)', category: 'চাল ও আটা', price: 180, stock: 100, image: 'images/চাল.jpg' },
+            { vendorId: 'v2', name: 'লাল আটা (১ কেজি)', category: 'চাল ও আটা', price: 80, stock: 100, image: 'images/ময়দা.jpg' }
+        ]);
+        console.log('✅ Updated Products Seeded!');
+    } catch (err) {
+        console.log("❌ Seeding Error:", err.message);
+    }
 }
 
 // --- API ROUTES ---
@@ -87,43 +104,31 @@ app.get('/api/orders', async (req, res) => {
     }
 });
 
-// Update Single Order Status (With Password Protection for Deletion)
 app.put('/api/orders/:id/status', async (req, res) => {
     try {
-        const { status, password } = req.body;
-        if (status === 'Deleted' && password !== '12345#') {
-            return res.status(401).json({ error: 'ভুল পাসওয়ার্ড! অ্যাক্সেস ডিনাইড।' });
-        }
-        const order = await Order.findByIdAndUpdate(req.params.id, { status }, { new: true });
+        const order = await Order.findByIdAndUpdate(req.params.id, { status: req.body.status }, { new: true });
         res.json(order);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
-// NEW SECURE ROUTE: Soft Delete All Orders
-app.post('/api/orders/clear', async (req, res) => {
+// NEW ROUTE TO DELETE ALL DEMO ORDERS
+app.delete('/api/orders', async (req, res) => {
     try {
-        const { password } = req.body;
-        if (password !== '12345#') {
-            return res.status(401).json({ message: 'ভুল পাসওয়ার্ড! অ্যাক্সেস ডিনাইড।' });
-        }
-        // Soft delete all orders
-        await Order.updateMany({}, { status: 'Deleted' });
-        res.json({ message: 'সমস্ত অর্ডার মুছে ফেলা হয়েছে এবং অর্ডার ট্যাবে সংরক্ষিত আছে।' });
+        await Order.deleteMany({});
+        res.json({ message: 'All orders cleared successfully' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
-// Analytics (Excludes 'Deleted' Orders)
 app.get('/api/analytics', async (req, res) => {
     try {
-        // Fetch only ACTIVE orders for stats
-        const activeOrders = await Order.find({ status: { $ne: 'Deleted' } });
-        const totalRevenue = activeOrders.reduce((sum, o) => sum + o.total, 0);
-        const pendingCount = activeOrders.filter(o => o.status === 'Pending').length;
-        res.json({ totalRevenue, totalOrders: activeOrders.length, pendingCount });
+        const orders = await Order.find();
+        const totalRevenue = orders.reduce((sum, o) => sum + o.total, 0);
+        const pendingCount = orders.filter(o => o.status === 'Pending').length;
+        res.json({ totalRevenue, totalOrders: orders.length, pendingCount });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

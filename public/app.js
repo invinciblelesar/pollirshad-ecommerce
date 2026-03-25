@@ -229,6 +229,13 @@ function sendMessage() {
 async function adminLogin() {
     const u = document.getElementById('adminUser').value;
     const p = document.getElementById('adminPass').value;
+    const btn = document.getElementById('loginBtn');
+    
+    // লোডিং অ্যানিমেশন চালু করা (সার্ভার চালু হতে সময় নিলে ইউজার বুঝতে পারবে)
+    const originalText = btn.innerText;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> সার্ভার লোড হচ্ছে...';
+    btn.disabled = true;
+    btn.classList.add('opacity-70', 'cursor-not-allowed');
     
     try {
         const res = await fetch(`${API_URL}/auth/login`, {
@@ -242,8 +249,17 @@ async function adminLogin() {
             localStorage.setItem('adminToken', data.token);
             document.getElementById('loginScreen').classList.add('hidden');
             loadAdminData();
-        } else { alert("ভুল ইউজারনেম বা পাসওয়ার্ড!"); }
-    } catch(err) { alert("সার্ভার এরর।"); }
+        } else { 
+            alert("ভুল ইউজারনেম বা পাসওয়ার্ড!"); 
+        }
+    } catch(err) {
+        alert("সার্ভার এরর অথবা সার্ভার স্লিপ মোডে আছে। দয়া করে ১০-২০ সেকেন্ড অপেক্ষা করে আবার লগইন করুন।");
+    } finally {
+        // লোডিং অ্যানিমেশন বন্ধ করা
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        btn.classList.remove('opacity-70', 'cursor-not-allowed');
+    }
 }
 
 function logout() {

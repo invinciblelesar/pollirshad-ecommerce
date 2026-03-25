@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:5000/api'; // Change to actual URL upon deployment
+const API_URL = '/api';
 
 // ---- STATE ----
 let cart = JSON.parse(localStorage.getItem('cart')) || [];

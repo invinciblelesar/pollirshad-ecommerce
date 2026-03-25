@@ -1,0 +1,21 @@
+{
+  "name": "Pollirshad eCommerce",
+  "short_name": "Pollirshad",
+  "description": "Premium rural products marketplace",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ea580c",
+  "icons":[
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3502/3502601.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3502/3502601.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

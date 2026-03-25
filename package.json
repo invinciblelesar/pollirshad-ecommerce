@@ -1,7 +1,7 @@
 {
   "name": "pollirshad",
-  "version": "1.0.0",
-  "description": "Multi-vendor eCommerce Platform",
+  "version": "1.0.1",
+  "description": "Multi-vendor eCommerce Platform - Pollirshad Bengali Update",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

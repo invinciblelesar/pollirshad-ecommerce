@@ -12,10 +12,13 @@ app.use(express.static('public')); // Serve Frontend
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey_pollirshad';
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/pollirshad'; // Replace with Atlas URL for production
 
-// --- DATABASE MODELS ---
-mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-    .then(() => console.log('✅ MongoDB Connected'))
-    .catch(err => console.log('❌ DB Error:', err));
+// --- DATABASE MODELS & CONNECTION ---
+mongoose.connect(MONGO_URI)
+    .then(() => {
+        console.log('✅ MongoDB Connected');
+        seedData(); // Only run this AFTER database connects
+    })
+    .catch(err => console.log('❌ DB Error:', err.message));
 
 const ProductSchema = new mongoose.Schema({
     vendorId: String, name: String, category: String, price: Number,
@@ -26,10 +29,27 @@ const Product = mongoose.model('Product', ProductSchema);
 const OrderSchema = new mongoose.Schema({
     customerId: String, customerName: String, phone: String, address: String,
     items: Array, total: Number, paymentMethod: String, trxId: String,
-    status: { type: String, default: 'Pending' }, // Pending, Processing, Delivered
+    status: { type: String, default: 'Pending' },
     createdAt: { type: Date, default: Date.now }
 });
 const Order = mongoose.model('Order', OrderSchema);
+
+// --- SEED INITIAL DATA (Safely) ---
+async function seedData() {
+    try {
+        const count = await Product.countDocuments();
+        if (count === 0) {
+            await Product.insertMany([
+                { vendorId: 'v1', name: 'খাটি সরিষার তেল (১ লিটার)', category: 'Grocery', price: 250, stock: 50, image: 'https://images.unsplash.com/photo-1620706857370-e1b9770e8bb1?auto=format&fit=crop&w=300' },
+                { vendorId: 'v1', name: 'সুন্দরবনের খাঁটি মধু (৫০০ গ্রাম)', category: 'Honey', price: 400, stock: 30, image: 'https://images.unsplash.com/photo-1587049352847-4d4b1f450370?auto=format&fit=crop&w=300' },
+                { vendorId: 'v2', name: 'খেজুরের গুড় (১ কেজি)', category: 'Sweets', price: 350, stock: 100, image: 'https://images.unsplash.com/photo-1600180735311-65715206f363?auto=format&fit=crop&w=300' }
+            ]);
+            console.log('✅ Products Seeded!');
+        }
+    } catch (err) {
+        console.log("❌ Seeding Error:", err.message);
+    }
+}
 
 // --- SEED INITIAL DATA (Test Data) ---
 async function seedData() {

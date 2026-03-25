@@ -13,6 +13,12 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap');
         body { font-family: 'Hind Siliguri', sans-serif; }
+        
+        /* Custom scrollbar for small item lists */
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
 <body class="bg-gray-100 flex h-screen overflow-hidden">
@@ -105,6 +111,8 @@
                                     <th class="p-3 font-semibold">গ্রাহক</th>
                                     <th class="p-3 font-semibold">ঠিকানা</th>
                                     <th class="p-3 font-semibold">পেমেন্ট</th>
+                                    <!-- NEW COLUMN FOR ITEMS -->
+                                    <th class="p-3 font-semibold">পণ্যসমূহ (Items)</th>
                                     <th class="p-3 font-semibold">মোট মূল্য</th>
                                     <th class="p-3 font-semibold">স্ট্যাটাস</th>
                                     <th class="p-3 font-semibold">অ্যাকশন</th>

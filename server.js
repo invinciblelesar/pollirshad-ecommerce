@@ -29,10 +29,10 @@ const ProductSchema = new mongoose.Schema({
 });
 const Product = mongoose.model('Product', ProductSchema);
 
-// Order Schema
+// Order Schema (Replaced to include senderPhone)
 const OrderSchema = new mongoose.Schema({
     customerId: String, customerName: String, phone: String, address: String,
-    items: Array, total: Number, paymentMethod: String, trxId: String,
+    items: Array, total: Number, paymentMethod: String, trxId: String, senderPhone: String,
     status: { type: String, default: 'Pending' },
     createdAt: { type: Date, default: Date.now }
 });

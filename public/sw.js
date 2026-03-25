@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pollirshad-store-v2'; // Updated to v2 to force clear old cache
+const CACHE_NAME = 'pollirshad-store-v3'; // Version Bumped
 const ASSETS_TO_CACHE =[
     '/', 
     '/index.html', 
@@ -13,7 +13,6 @@ self.addEventListener('install', (e) => {
     );
 });
 
-// This activate event clears out the old cache (v1) when the new service worker takes over
 self.addEventListener('activate', (e) => {
     e.waitUntil(
         caches.keys().then((keyList) => {
@@ -28,6 +27,11 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
+    // API Call বা POST request গুলো ক্যাশ করা যাবে না, এগুলো সরাসরি সার্ভারে যাবে
+    if (e.request.url.includes('/api/') || e.request.method !== 'GET') {
+        return; 
+    }
+    
     e.respondWith(
         caches.match(e.request).then((response) => response || fetch(e.request))
     );

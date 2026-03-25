@@ -58,6 +58,16 @@ function addToCart(id) {
     }
 }
 
+// Function to handle + and - buttons in Cart
+function updateCartQty(idx, change) {
+    cart[idx].qty += change;
+    if (cart[idx].qty <= 0) {
+        cart.splice(idx, 1); // Remove item if qty is 0 or less
+    }
+    saveCart();
+    updateCartUI();
+}
+
 function updateCartUI() {
     const countEl = document.getElementById('cartCount');
     if(countEl) countEl.innerText = cart.reduce((sum, item) => sum + item.qty, 0);
@@ -69,10 +79,24 @@ function updateCartUI() {
         <div class="flex gap-4 border-b py-3 items-center">
             <img src="${item.image}" class="w-16 h-16 rounded object-cover border">
             <div class="flex-1">
-                <h5 class="text-sm font-bold text-gray-800">${item.name}</h5>
-                <p class="text-[#e76f51] text-sm font-semibold">৳ ${item.price} x ${item.qty}</p>
+                <h5 class="text-sm font-bold text-gray-800 leading-tight mb-1" title="${item.name}">${item.name}</h5>
+                <p class="text-[#e76f51] text-xs font-semibold mb-2">৳ ${item.price} / per</p>
+                
+                <!-- Plus/Minus Buttons Added Here -->
+                <div class="flex items-center gap-2">
+                    <button onclick="updateCartQty(${idx}, -1)" class="w-7 h-7 flex items-center justify-center rounded bg-gray-200 text-gray-700 hover:bg-red-200 transition">
+                        <i class="fas fa-minus text-xs"></i>
+                    </button>
+                    <span class="text-sm font-bold w-5 text-center">${item.qty}</span>
+                    <button onclick="updateCartQty(${idx}, 1)" class="w-7 h-7 flex items-center justify-center rounded bg-gray-200 text-gray-700 hover:bg-green-200 transition">
+                        <i class="fas fa-plus text-xs"></i>
+                    </button>
+                </div>
             </div>
-            <button onclick="removeCart(${idx})" class="text-red-500 hover:text-red-700 text-sm p-2 bg-red-50 rounded"><i class="fas fa-trash"></i></button>
+            <div class="flex flex-col items-end gap-3">
+                <button onclick="removeCart(${idx})" class="text-red-500 hover:text-red-700 text-sm p-2 bg-red-50 rounded"><i class="fas fa-trash"></i></button>
+                <span class="font-bold text-gray-800 text-sm">৳ ${item.price * item.qty}</span>
+            </div>
         </div>
     `).join('') : '<div class="text-center text-gray-400 mt-10"><i class="fas fa-shopping-basket text-4xl mb-3"></i><p>আপনার কার্ট খালি।</p></div>';
     
@@ -196,7 +220,7 @@ function sendMessage() {
 }
 
 // ============================================
-// ---- ADMIN DASHBOARD LOGIC (RESTORED) ----
+// ---- ADMIN DASHBOARD LOGIC ----
 // ============================================
 
 async function adminLogin() {
@@ -263,17 +287,30 @@ async function loadAdminData() {
                         </div>`;
                 }
 
+                // Format Ordered Items for the New Column
+                let itemsHtml = (o.items ||[]).map(i => `
+                    <div class="text-xs text-gray-700 bg-white border border-gray-200 shadow-sm rounded px-2 py-1 mb-1 whitespace-normal">
+                        <span class="font-bold text-[#e76f51]">${i.qty}x</span> ${i.name}
+                    </div>
+                `).join('');
+
                 return `
                 <tr class="border-b hover:bg-gray-50 transition-colors">
                     <td class="p-3">
                         <div class="font-bold text-gray-800">${o.customerName}</div>
                         <div class="text-xs text-gray-500 mt-1"><i class="fas fa-phone-alt"></i> ${o.phone}</div>
                     </td>
-                    <td class="p-3 text-xs text-gray-600 max-w-[200px] whitespace-normal">
+                    <td class="p-3 text-xs text-gray-600 max-w-[150px] whitespace-normal">
                         ${o.address}
                     </td>
                     <td class="p-3">
                         ${paymentInfo}
+                    </td>
+                    <!-- RENDER ITEMS HERE -->
+                    <td class="p-3 min-w-[200px] max-w-[250px]">
+                        <div class="max-h-24 overflow-y-auto pr-1 custom-scroll">
+                            ${itemsHtml || '<span class="text-gray-400 text-xs">No items found</span>'}
+                        </div>
                     </td>
                     <td class="p-3 font-bold text-gray-800 text-base">
                         ৳ ${o.total}

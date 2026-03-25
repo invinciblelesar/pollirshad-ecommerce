@@ -1,14 +1,17 @@
 const API_URL = '/api'; 
 
+// ---- STATE ----
 let cart = JSON.parse(localStorage.getItem('cart')) || [];
 let products =[];
 
+// ---- INITIALIZATION ----
 if (window.location.pathname === '/' || window.location.pathname === '/index.html' || window.location.pathname === '') {
     loadProducts();
     updateCartUI();
     registerServiceWorker();
 }
 
+// ---- SHOP FRONTEND ----
 async function loadProducts() {
     try {
         const res = await fetch(`${API_URL}/products`);
@@ -19,15 +22,15 @@ async function loadProducts() {
             grid.innerHTML = products.map(p => `
                 <div class="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow overflow-hidden group">
                     <div class="relative overflow-hidden">
-                        <img src="${p.image}" class="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500">
+                        <img src="${p.image}" class="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500" alt="${p.name}">
                         ${p.stock < 10 ? `<span class="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded shadow">Low Stock</span>` : ''}
                     </div>
                     <div class="p-4">
                         <p class="text-xs text-gray-500 uppercase tracking-widest mb-1">${p.category}</p>
                         <h4 class="font-bold text-gray-800 text-lg mb-2 truncate" title="${p.name}">${p.name}</h4>
                         <div class="flex justify-between items-center mt-4">
-                            <span class="text-orange-600 font-bold text-xl">৳ ${p.price}</span>
-                            <button onclick="addToCart('${p._id}')" class="bg-gray-900 text-white px-3 py-1.5 rounded-md hover:bg-orange-600 transition-colors shadow-sm text-sm">
+                            <span class="text-[#e76f51] font-bold text-xl">৳ ${p.price}</span>
+                            <button onclick="addToCart('${p._id}')" class="bg-gray-900 text-white px-3 py-1.5 rounded-md hover:bg-[#2d5a27] transition-colors shadow-sm text-sm">
                                 <i class="fas fa-cart-plus"></i> অ্যাড
                             </button>
                         </div>
@@ -45,7 +48,9 @@ function addToCart(id) {
     else cart.push({ ...product, qty: 1 });
     
     if(typeof trackPixel === 'function') trackPixel('AddToCart');
-    saveCart(); updateCartUI();
+    
+    saveCart();
+    updateCartUI();
     
     const cartPanel = document.getElementById('cartPanel');
     if(cartPanel && cartPanel.classList.contains('translate-x-full')) {
@@ -65,7 +70,7 @@ function updateCartUI() {
             <img src="${item.image}" class="w-16 h-16 rounded object-cover border">
             <div class="flex-1">
                 <h5 class="text-sm font-bold text-gray-800">${item.name}</h5>
-                <p class="text-orange-600 text-sm font-semibold">৳ ${item.price} x ${item.qty}</p>
+                <p class="text-[#e76f51] text-sm font-semibold">৳ ${item.price} x ${item.qty}</p>
             </div>
             <button onclick="removeCart(${idx})" class="text-red-500 hover:text-red-700 text-sm p-2 bg-red-50 rounded"><i class="fas fa-trash"></i></button>
         </div>
@@ -80,6 +85,7 @@ function removeCart(idx) { cart.splice(idx, 1); saveCart(); updateCartUI(); }
 function saveCart() { localStorage.setItem('cart', JSON.stringify(cart)); }
 function toggleCart() { document.getElementById('cartPanel').classList.toggle('translate-x-full'); }
 
+// ---- CHECKOUT ----
 function openCheckout() {
     if(cart.length === 0) return alert('আপনার কার্ট খালি!');
     document.getElementById('checkoutModal').classList.remove('hidden');
@@ -90,8 +96,11 @@ function closeCheckout() { document.getElementById('checkoutModal').classList.ad
 function togglePayment() {
     const val = document.getElementById('paymentMethod').value;
     const details = document.getElementById('paymentDetails');
-    if(val !== 'Cash on Delivery') details.classList.remove('hidden');
-    else details.classList.add('hidden');
+    if(val !== 'Cash on Delivery') {
+        details.classList.remove('hidden');
+    } else {
+        details.classList.add('hidden');
+    }
 }
 
 async function placeOrder() {
@@ -101,7 +110,7 @@ async function placeOrder() {
         address: document.getElementById('cAddress').value.trim(),
         paymentMethod: document.getElementById('paymentMethod').value,
         senderPhone: document.getElementById('senderPhone') ? document.getElementById('senderPhone').value.trim() : '',
-        trxId: document.getElementById('trxId').value.trim(),
+        trxId: document.getElementById('trxId') ? document.getElementById('trxId').value.trim() : '',
         items: cart,
         total: cart.reduce((s, i) => s + (i.price * i.qty), 0)
     };
@@ -120,30 +129,38 @@ async function placeOrder() {
             body: JSON.stringify(data)
         });
         const result = await res.json();
+        
         if(typeof trackPixel === 'function') trackPixel('Purchase');
         
         generatePDFInvoice(data, result.orderId);
+        
         alert("অর্ডার সফলভাবে প্লেস হয়েছে! অর্ডার আইডি: " + result.orderId);
         
-        // Exact WhatsApp Structure matched
         let paymentTxt = `💳 পেমেন্ট: ${data.paymentMethod}\n`;
         if(data.paymentMethod !== 'Cash on Delivery') {
             paymentTxt += `📱 প্রেরক নম্বর: ${data.senderPhone}\n🆔 TrxID: ${data.trxId}\n`;
         }
         
         let waMsg = `*নতুন অর্ডার - পল্লীর স্বাদ*\n━━━━━━━━━━━━━━\n👤 নাম: ${data.customerName}\n📞 ফোন: ${data.phone}\n📍 ঠিকানা: ${data.address}\n${paymentTxt}\n*অর্ডার লিস্ট:*\n`;
-        cart.forEach((item, i) => { waMsg += `${i+1}. ${item.name} - ${item.qty} টি (${item.price * item.qty} ৳)\n`; });
+        cart.forEach((item, i) => {
+            waMsg += `${i+1}. ${item.name} - ${item.qty} টি (${item.price * item.qty} ৳)\n`;
+        });
         waMsg += `\n*সর্বমোট মূল্য:* ${data.total} টাকা`;
         
         cart =[]; saveCart(); updateCartUI(); closeCheckout();
+        
         window.open(`https://wa.me/8801580567606?text=${encodeURIComponent(waMsg)}`, '_blank');
         
-    } catch (e) { alert("Error placing order. Please try again."); console.error(e); }
+    } catch (e) { 
+        alert("অর্ডার প্লেস করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।"); 
+        console.error(e);
+    }
 }
 
 function generatePDFInvoice(data, orderId) {
     if(!window.jspdf) return;
-    const { jsPDF } = window.jspdf; const doc = new jsPDF();
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
     doc.setFontSize(20); doc.text("POLLIRSHAD - INVOICE", 10, 20);
     doc.setFontSize(12);
     doc.text(`Order ID: ${orderId}`, 10, 30);
@@ -153,7 +170,12 @@ function generatePDFInvoice(data, orderId) {
     doc.save(`Pollirshad_Invoice_${orderId}.pdf`);
 }
 
-function toggleChat() { document.getElementById('chatBox')?.classList.toggle('hidden'); }
+// ---- AI CHATBOT ----
+function toggleChat() {
+    const chat = document.getElementById('chatBox');
+    if(chat) chat.classList.toggle('hidden');
+}
+
 function sendMessage() {
     const input = document.getElementById('chatInput');
     const msg = input.value.trim();
@@ -167,30 +189,156 @@ function sendMessage() {
         let reply = "আমাদের সাপোর্ট টিম শিগ্রই যোগাযোগ করবে।";
         if(msg.includes('ডেলিভারি')) reply = "ঢাকার ভিতরে ২-৩ দিন এবং ঢাকার বাহিরে ৩-৫ দিনের মাঝে ডেলিভারি পাবেন।";
         else if(msg.includes('বিকাশ') || msg.includes('পেমেন্ট')) reply = "আমাদের বিকাশ/নগদ পার্সোনাল নাম্বারঃ 01580567606";
-        box.innerHTML += `<div class="mb-2 text-orange-700 bg-orange-50 p-2 rounded"><strong>বট:</strong> ${reply}</div>`;
+        
+        box.innerHTML += `<div class="mb-2 text-green-800 bg-green-100 p-2 rounded"><strong>বট:</strong> ${reply}</div>`;
         box.scrollTop = box.scrollHeight;
     }, 1000);
 }
 
-// Admin logic remains unchanged...
-// [Same admin login logic mapped from the previous file goes here]
-// For brevity, ensuring the basic setup remains unaffected
+// ============================================
+// ---- ADMIN DASHBOARD LOGIC (RESTORED) ----
+// ============================================
+
 async function adminLogin() {
-    const u = document.getElementById('adminUser').value; const p = document.getElementById('adminPass').value;
+    const u = document.getElementById('adminUser').value;
+    const p = document.getElementById('adminPass').value;
+    
     try {
-        const res = await fetch(`${API_URL}/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: u, password: p }) });
+        const res = await fetch(`${API_URL}/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: u, password: p })
+        });
         const data = await res.json();
+        
         if(data.token && data.role === 'admin') {
             localStorage.setItem('adminToken', data.token);
-            document.getElementById('loginScreen').classList.add('hidden'); loadAdminData();
-        } else alert("Invalid Admin Credentials");
-    } catch(err) { alert("Server error."); }
+            document.getElementById('loginScreen').classList.add('hidden');
+            loadAdminData();
+        } else { 
+            alert("ভুল ইউজারনেম বা পাসওয়ার্ড!"); 
+        }
+    } catch(err) {
+        alert("সার্ভার এরর।");
+    }
 }
 
-function logout() { localStorage.removeItem('adminToken'); window.location.reload(); }
-// (Remaining dashboard logic identical to original JS format)...
+function logout() {
+    localStorage.removeItem('adminToken');
+    window.location.reload();
+}
+
+async function loadAdminData() {
+    try {
+        // Fetch Analytics Stats
+        const res = await fetch(`${API_URL}/analytics`);
+        const stats = await res.json();
+        
+        document.getElementById('statRev').innerText = `৳ ${stats.totalRevenue}`;
+        document.getElementById('statOrders').innerText = stats.totalOrders;
+        document.getElementById('statPending').innerText = stats.pendingCount;
+
+        // Fetch Orders for Table
+        const ordRes = await fetch(`${API_URL}/orders`);
+        const orders = await ordRes.json();
+        const tbody = document.getElementById('ordersTableBody');
+        
+        if(tbody) {
+            tbody.innerHTML = orders.map(o => {
+                // Determine Badge Colors
+                let badgeColor = 'bg-yellow-100 text-yellow-800 border-yellow-200'; // Pending
+                if(o.status === 'Processing') badgeColor = 'bg-blue-100 text-blue-800 border-blue-200';
+                if(o.status === 'Delivered') badgeColor = 'bg-green-100 text-green-800 border-green-200';
+
+                // Format Payment Info
+                let paymentInfo = '';
+                if(o.paymentMethod === 'Cash on Delivery') {
+                    paymentInfo = `<span class="text-[#e76f51] font-bold px-2 py-1 bg-orange-50 rounded border border-orange-200 text-xs">COD</span>`;
+                } else {
+                    paymentInfo = `
+                        <div class="text-xs leading-tight bg-gray-50 p-2 rounded border">
+                            <strong class="text-gray-800">${o.paymentMethod}</strong><br>
+                            <span class="text-gray-500">No:</span> ${o.senderPhone || 'N/A'}<br>
+                            <span class="text-gray-500">TrxID:</span> <span class="font-mono">${o.trxId || 'N/A'}</span>
+                        </div>`;
+                }
+
+                return `
+                <tr class="border-b hover:bg-gray-50 transition-colors">
+                    <td class="p-3">
+                        <div class="font-bold text-gray-800">${o.customerName}</div>
+                        <div class="text-xs text-gray-500 mt-1"><i class="fas fa-phone-alt"></i> ${o.phone}</div>
+                    </td>
+                    <td class="p-3 text-xs text-gray-600 max-w-[200px] whitespace-normal">
+                        ${o.address}
+                    </td>
+                    <td class="p-3">
+                        ${paymentInfo}
+                    </td>
+                    <td class="p-3 font-bold text-gray-800 text-base">
+                        ৳ ${o.total}
+                    </td>
+                    <td class="p-3">
+                        <span class="${badgeColor} px-2 py-1 rounded text-xs font-semibold shadow-sm border">${o.status}</span>
+                    </td>
+                    <td class="p-3">
+                        <select onchange="updateOrderStatus('${o._id}', this.value)" class="border border-gray-300 rounded p-1 text-xs bg-white cursor-pointer hover:border-[#2d5a27] outline-none">
+                            <option disabled selected>স্ট্যাটাস পরিবর্তন</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Processing">Processing</option>
+                            <option value="Delivered">Delivered</option>
+                        </select>
+                    </td>
+                </tr>
+                `;
+            }).join('');
+        }
+
+        // Setup Admin Chart
+        const chartCanvas = document.getElementById('salesChart');
+        if(chartCanvas && !window.mySalesChart) {
+            const ctx = chartCanvas.getContext('2d');
+            window.mySalesChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels:['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+                    datasets:[{ 
+                        label: 'Daily Sales (Mock BDT)', 
+                        data:[1200, 1900, 3000, 500, 2000, 3000, 4500], 
+                        backgroundColor: 'rgba(45, 90, 39, 0.8)', // Dark Green matching #2d5a27
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+    } catch(err) {
+        console.error("Failed to load admin data", err);
+    }
+}
+
+async function updateOrderStatus(id, status) {
+    try {
+        await fetch(`${API_URL}/orders/${id}/status`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status })
+        });
+        alert(`অর্ডার স্ট্যাটাস আপডেট হয়েছে: ${status}`);
+        loadAdminData(); // Refresh table immediately
+    } catch(err) {
+        alert("স্ট্যাটাস আপডেট ব্যর্থ হয়েছে।");
+    }
+}
+
+// ---- PWA SETUP ----
 function registerServiceWorker() {
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js').then(() => console.log('✅ PWA SW Registered'));
+        navigator.serviceWorker.register('/sw.js')
+            .then(() => console.log('✅ PWA Service Worker Registered'))
+            .catch(err => console.log('❌ SW Registration failed:', err));
     }
 }

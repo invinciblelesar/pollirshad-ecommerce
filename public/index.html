@@ -89,14 +89,16 @@
             <textarea id="cAddress" placeholder="Delivery Address" class="w-full mb-3 p-2 border rounded"></textarea>
             
             <select id="paymentMethod" class="w-full mb-3 p-2 border rounded" onchange="togglePayment()">
-                <option value="COD">Cash on Delivery</option>
-                <option value="bKash">bKash (017XXXXX)</option>
+                <option value="COD">Cash on Delivery (COD)</option>
+                <option value="bKash">bKash</option>
                 <option value="Nagad">Nagad</option>
+                <option value="Rocket">Rocket</option>
             </select>
             
             <div id="paymentDetails" class="hidden mb-3 bg-orange-50 p-3 rounded border border-orange-200">
-                <p class="text-xs text-orange-800 mb-2">Send money to 017XXXXXXXX and enter TrxID below.</p>
-                <input type="text" id="trxId" placeholder="Transaction ID" class="w-full p-2 border rounded">
+                <p class="text-xs text-orange-800 mb-2">Send money to <strong>017XXXXXXXX</strong> and enter details below.</p>
+                <input type="text" id="senderPhone" placeholder="Account / Sender Phone No." class="w-full mb-2 p-2 border rounded">
+                <input type="text" id="trxId" placeholder="Transaction ID (TrxID)" class="w-full p-2 border rounded">
             </div>
 
             <div class="flex gap-2">

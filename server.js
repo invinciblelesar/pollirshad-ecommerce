@@ -22,14 +22,12 @@ mongoose.connect(MONGO_URI)
     })
     .catch(err => console.log('❌ DB Error:', err.message));
 
-// Product Schema
 const ProductSchema = new mongoose.Schema({
     vendorId: String, name: String, category: String, price: Number,
     stock: Number, image: String, description: String
 });
 const Product = mongoose.model('Product', ProductSchema);
 
-// Order Schema
 const OrderSchema = new mongoose.Schema({
     customerId: String, customerName: String, phone: String, address: String,
     items: Array, total: Number, paymentMethod: String, trxId: String, senderPhone: String,
@@ -38,12 +36,10 @@ const OrderSchema = new mongoose.Schema({
 });
 const Order = mongoose.model('Order', OrderSchema);
 
-// --- SEED INITIAL DATA (UPDATED WITH TARGET CATALOG) ---
+// --- SEED INITIAL DATA ---
 async function seedData() {
     try {
-        // Clear previous dummy data to load the new Bengali catalog
         await Product.deleteMany({});
-        
         await Product.insertMany([
             { vendorId: 'v1', name: 'খেজুরের গুড় (পাটালি)', category: 'গুড় ও মধু', price: 350, stock: 50, image: 'images/খেজুরের গুড় (পাটালি)1.jpg' },
             { vendorId: 'v1', name: 'ঝোলা গুড় (১ কেজি)', category: 'গুড় ও মধু', price: 350, stock: 50, image: 'images/ঝোলা গুড় (১ কেজি)1.jpg' },
@@ -54,7 +50,6 @@ async function seedData() {
             { vendorId: 'v2', name: 'সরিষা মধু (১ কেজি)', category: 'গুড় ও মধু', price: 600, stock: 40, image: 'images/সরিষা মধু (১ কেজি)1.jpg' },
             { vendorId: 'v2', name: 'লিচু ফুলের মধু (১ কেজি)', category: 'গুড় ও মধু', price: 1000, stock: 40, image: 'images/লিচু ফুলের মধু (১ কেজি)1.jpg' },
             { vendorId: 'v1', name: 'প্রাকৃতিক ফুলের মধু (১ কেজি)', category: 'গুড় ও মধু', price: 1600, stock: 50, image: 'images/প্রাকৃতিক ফুলের মধু (১ কেজি)1.jpg' },
-            
             { vendorId: 'v1', name: 'সরিষার তেল (১ কেজি)', category: 'তেল ও মসলা', price: 230, stock: 100, image: 'images/সরিষার তেল (১ কেজি)1.jpg' },
             { vendorId: 'v2', name: 'হলুদ গুড়া (১ কেজি)', category: 'তেল ও মসলা', price: 480, stock: 50, image: 'images/হলুদ.jpg' },
             { vendorId: 'v2', name: 'হলুদ গুড়া (২৫০ গ্রাম)', category: 'তেল ও মসলা', price: 120, stock: 80, image: 'images/হলুদ.jpg' },
@@ -62,7 +57,6 @@ async function seedData() {
             { vendorId: 'v1', name: 'মরিচ গুড়া (২৫০ গ্রাম)', category: 'তেল ও মসলা', price: 150, stock: 80, image: 'images/মরিচ.jpg' },
             { vendorId: 'v2', name: 'ধনিয়া গুড়া (১ কেজি)', category: 'তেল ও মসলা', price: 450, stock: 60, image: 'images/ধনিয়া গুড়া1.jpg' },
             { vendorId: 'v2', name: 'ধনিয়া গুড়া (২৫০ গ্রাম)', category: 'তেল ও মসলা', price: 112, stock: 80, image: 'images/ধনিয়া গুড়া1.jpg' },
-            
             { vendorId: 'v1', name: 'কালোজিরা পোলাও চাল (১ কেজি)', category: 'চাল ও আটা', price: 180, stock: 100, image: 'images/চাল.jpg' },
             { vendorId: 'v2', name: 'লাল আটা (১ কেজি)', category: 'চাল ও আটা', price: 80, stock: 100, image: 'images/ময়দা.jpg' }
         ]);
@@ -73,7 +67,6 @@ async function seedData() {
 }
 
 // --- API ROUTES ---
-// 1. Auth Route (Admin Panel Login)
 app.post('/api/auth/login', (req, res) => {
     const { username, password } = req.body;
     if (username === 'Rasel' && password === '12345#') {
@@ -83,7 +76,6 @@ app.post('/api/auth/login', (req, res) => {
     res.status(401).json({ message: 'Invalid credentials' });
 });
 
-// 2. Products API (Frontend Grid)
 app.get('/api/products', async (req, res) => {
     try {
         const products = await Product.find();
@@ -93,7 +85,6 @@ app.get('/api/products', async (req, res) => {
     }
 });
 
-// 3. Orders API (Checkout & Admin Dashboard)
 app.post('/api/orders', async (req, res) => {
     try {
         const newOrder = new Order(req.body);
@@ -122,7 +113,16 @@ app.put('/api/orders/:id/status', async (req, res) => {
     }
 });
 
-// 4. Analytics API (For Admin Dashboard Stats)
+// NEW ROUTE TO DELETE ALL DEMO ORDERS
+app.delete('/api/orders', async (req, res) => {
+    try {
+        await Order.deleteMany({});
+        res.json({ message: 'All orders cleared successfully' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.get('/api/analytics', async (req, res) => {
     try {
         const orders = await Order.find();
@@ -134,6 +134,5 @@ app.get('/api/analytics', async (req, res) => {
     }
 });
 
-// --- SERVER START ---
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

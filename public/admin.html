@@ -14,7 +14,6 @@
         @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap');
         body { font-family: 'Hind Siliguri', sans-serif; }
         
-        /* Custom scrollbar for small item lists */
         .custom-scroll::-webkit-scrollbar { width: 4px; }
         .custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
@@ -30,10 +29,8 @@
                 <i class="fas fa-store text-4xl text-[#2d5a27] mb-2"></i>
                 <h2 class="text-2xl font-bold text-gray-800">অ্যাডমিন লগইন</h2>
             </div>
-            
             <input type="text" id="adminUser" placeholder="ইউজারনেম (Username)" class="w-full mb-4 p-3 border border-gray-300 rounded focus:outline-none focus:border-[#2d5a27] focus:ring-1 focus:ring-[#2d5a27] bg-gray-50">
             <input type="password" id="adminPass" placeholder="পাসওয়ার্ড (Password)" class="w-full mb-6 p-3 border border-gray-300 rounded focus:outline-none focus:border-[#2d5a27] focus:ring-1 focus:ring-[#2d5a27] bg-gray-50">
-            
             <button onclick="adminLogin()" class="w-full bg-[#2d5a27] text-white py-3 rounded font-bold hover:bg-green-800 transition duration-200 shadow-md">
                 লগইন করুন
             </button>
@@ -52,14 +49,14 @@
             <button onclick="toggleSidebar()" class="md:hidden text-gray-400 hover:text-white"><i class="fas fa-times"></i></button>
         </div>
         <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
-            <a href="#" class="block py-3 px-4 bg-gray-800 rounded text-sm font-semibold border-l-4 border-[#e76f51] transition-colors">
+            <button onclick="switchTab('dashboard')" id="tab-dashboard" class="w-full text-left block py-3 px-4 bg-gray-800 rounded text-sm font-semibold border-l-4 border-[#e76f51] transition-colors">
                 <i class="fas fa-chart-line w-5"></i> ড্যাশবোর্ড
-            </a>
-            <a href="#" class="block py-3 px-4 hover:bg-gray-800 rounded text-sm text-gray-300 transition-colors">
+            </button>
+            <button onclick="switchTab('orders')" id="tab-orders" class="w-full text-left block py-3 px-4 hover:bg-gray-800 rounded text-sm text-gray-300 transition-colors">
                 <i class="fas fa-shopping-bag w-5"></i> অর্ডারসমূহ
-            </a>
+            </button>
         </nav>
-        <button onclick="logout()" class="p-4 bg-red-600 text-center font-bold hover:bg-red-700 transition-colors flex justify-center items-center gap-2">
+        <button onclick="logout()" class="p-4 bg-red-600 text-center font-bold hover:bg-red-700 transition-colors flex justify-center items-center gap-2 w-full">
             <i class="fas fa-sign-out-alt"></i> লগআউট
         </button>
     </div>
@@ -72,43 +69,77 @@
                     <i class="fas fa-bars"></i>
                 </button>
                 <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
-                    <i class="fas fa-tachometer-alt text-gray-400 hidden sm:inline"></i> ওভারভিউ
+                    <i class="fas fa-tachometer-alt text-gray-400 hidden sm:inline"></i> প্যানেল ওভারভিউ
                 </h2>
             </div>
             <div class="flex items-center gap-4">
                 <span class="text-gray-600 font-medium text-sm bg-gray-100 px-3 py-1 rounded-full border">
-                    <i class="fas fa-user-circle text-[#2d5a27] mr-1"></i> Admin
+                    <i class="fas fa-user-shield text-[#2d5a27] mr-1"></i> Admin
                 </span>
             </div>
         </header>
 
         <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-4 md:p-6">
-            <!-- Stats -->
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#2d5a27]">
-                    <h3 class="text-gray-500 text-xs font-bold uppercase tracking-wider">মোট আয়</h3>
-                    <p class="text-2xl md:text-3xl font-bold text-gray-800 mt-2" id="statRev">৳ 0</p>
+            
+            <!-- ================= DASHBOARD TAB ================= -->
+            <div id="dashboardView">
+                <!-- Stats -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                    <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#2d5a27]">
+                        <h3 class="text-gray-500 text-xs font-bold uppercase tracking-wider">মোট আয় (Active)</h3>
+                        <p class="text-2xl md:text-3xl font-bold text-gray-800 mt-2" id="statRev">৳ 0</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-blue-500">
+                        <h3 class="text-gray-500 text-xs font-bold uppercase tracking-wider">মোট অ্যাক্টিভ অর্ডার</h3>
+                        <p class="text-2xl md:text-3xl font-bold text-gray-800 mt-2" id="statOrders">0</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#e76f51]">
+                        <h3 class="text-gray-500 text-xs font-bold uppercase tracking-wider">পেন্ডিং অর্ডার</h3>
+                        <p class="text-2xl md:text-3xl font-bold text-gray-800 mt-2" id="statPending">0</p>
+                    </div>
                 </div>
-                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-blue-500">
-                    <h3 class="text-gray-500 text-xs font-bold uppercase tracking-wider">মোট অর্ডার</h3>
-                    <p class="text-2xl md:text-3xl font-bold text-gray-800 mt-2" id="statOrders">0</p>
-                </div>
-                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#e76f51]">
-                    <h3 class="text-gray-500 text-xs font-bold uppercase tracking-wider">পেন্ডিং অর্ডার</h3>
-                    <p class="text-2xl md:text-3xl font-bold text-gray-800 mt-2" id="statPending">0</p>
+
+                <!-- Chart & Table -->
+                <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                    <div class="col-span-1 xl:col-span-2 bg-white p-5 rounded-xl shadow-sm border border-gray-100 w-full overflow-hidden">
+                        <div class="flex justify-between items-center mb-4 border-b pb-2">
+                            <h3 class="font-bold text-gray-800">সাম্প্রতিক অর্ডারসমূহ (শুধুমাত্র অ্যাক্টিভ)</h3>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse whitespace-nowrap">
+                                <thead>
+                                    <tr class="bg-gray-50 text-xs uppercase text-gray-500 border-y">
+                                        <th class="p-3 font-semibold">গ্রাহক</th>
+                                        <th class="p-3 font-semibold">ঠিকানা</th>
+                                        <th class="p-3 font-semibold text-[#e76f51]">পণ্যসমূহ (Items)</th>
+                                        <th class="p-3 font-semibold">মোট মূল্য</th>
+                                        <th class="p-3 font-semibold">স্ট্যাটাস</th>
+                                        <th class="p-3 font-semibold">অ্যাকশন</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ordersTableBody" class="text-sm"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="col-span-1 bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+                        <h3 class="font-bold text-gray-800 mb-4 border-b pb-2">সেলস অ্যানালিটিক্স</h3>
+                        <div class="relative w-full h-[300px]">
+                            <canvas id="salesChart"></canvas>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Chart & Table -->
-            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                <!-- Orders Table -->
-                <div class="col-span-1 xl:col-span-2 bg-white p-5 rounded-xl shadow-sm border border-gray-100 w-full overflow-hidden">
-                    
-                    <div class="flex justify-between items-center mb-4 border-b pb-2">
-                        <h3 class="font-bold text-gray-800">সাম্প্রতিক অর্ডারসমূহ</h3>
-                        <!-- NEW: RESET BUTTON -->
-                        <button onclick="clearAllOrders()" class="bg-red-100 text-red-600 hover:bg-red-600 hover:text-white px-3 py-1.5 rounded text-xs font-bold transition-colors shadow-sm flex items-center gap-1 border border-red-200">
-                            <i class="fas fa-trash"></i> ডেমো অর্ডার মুছুন
+            <!-- ================= ORDERS TAB ================= -->
+            <div id="ordersView" class="hidden">
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 w-full overflow-hidden">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 border-b pb-2 gap-3">
+                        <h3 class="font-bold text-gray-800 text-lg flex items-center gap-2">
+                            <i class="fas fa-database text-blue-500"></i> সকল অর্ডার ও ডাটাবেস
+                        </h3>
+                        <button onclick="clearAllOrders()" class="bg-red-100 text-red-600 hover:bg-red-600 hover:text-white px-4 py-2 rounded text-sm font-bold transition-colors shadow-sm flex items-center gap-2 border border-red-200">
+                            <i class="fas fa-trash-alt"></i> সকল অর্ডার মুছুন
                         </button>
                     </div>
 
@@ -116,29 +147,21 @@
                         <table class="w-full text-left border-collapse whitespace-nowrap">
                             <thead>
                                 <tr class="bg-gray-50 text-xs uppercase text-gray-500 border-y">
-                                    <th class="p-3 font-semibold">গ্রাহক</th>
+                                    <th class="p-3 font-semibold">গ্রাহক ও সময়</th>
                                     <th class="p-3 font-semibold">ঠিকানা</th>
                                     <th class="p-3 font-semibold">পেমেন্ট</th>
-                                    <!-- NEW: ITEMS COLUMN -->
                                     <th class="p-3 font-semibold text-[#e76f51]">পণ্যসমূহ (Items)</th>
                                     <th class="p-3 font-semibold">মোট মূল্য</th>
                                     <th class="p-3 font-semibold">স্ট্যাটাস</th>
                                     <th class="p-3 font-semibold">অ্যাকশন</th>
                                 </tr>
                             </thead>
-                            <tbody id="ordersTableBody" class="text-sm"></tbody>
+                            <tbody id="allOrdersTableBody" class="text-sm"></tbody>
                         </table>
                     </div>
                 </div>
-                
-                <!-- Sales Analytics Chart -->
-                <div class="col-span-1 bg-white p-5 rounded-xl shadow-sm border border-gray-100">
-                    <h3 class="font-bold text-gray-800 mb-4 border-b pb-2">সেলস অ্যানালিটিক্স</h3>
-                    <div class="relative w-full h-[300px]">
-                        <canvas id="salesChart"></canvas>
-                    </div>
-                </div>
             </div>
+
         </main>
     </div>
 
@@ -149,6 +172,24 @@
             const overlay = document.getElementById('sidebarOverlay');
             sidebar.classList.toggle('-translate-x-full');
             overlay.classList.toggle('hidden');
+        }
+
+        function switchTab(tab) {
+            document.getElementById('dashboardView').classList.toggle('hidden', tab !== 'dashboard');
+            document.getElementById('ordersView').classList.toggle('hidden', tab !== 'orders');
+            
+            const tabDash = document.getElementById('tab-dashboard');
+            const tabOrd = document.getElementById('tab-orders');
+            
+            if (tab === 'dashboard') {
+                tabDash.className = "w-full text-left block py-3 px-4 bg-gray-800 rounded text-sm font-semibold border-l-4 border-[#e76f51] transition-colors";
+                tabOrd.className = "w-full text-left block py-3 px-4 hover:bg-gray-800 rounded text-sm text-gray-300 transition-colors";
+            } else {
+                tabOrd.className = "w-full text-left block py-3 px-4 bg-gray-800 rounded text-sm font-semibold border-l-4 border-[#e76f51] transition-colors";
+                tabDash.className = "w-full text-left block py-3 px-4 hover:bg-gray-800 rounded text-sm text-gray-300 transition-colors";
+            }
+
+            if(window.innerWidth < 768) toggleSidebar();
         }
 
         if(localStorage.getItem('adminToken')) {

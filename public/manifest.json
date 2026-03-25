@@ -1,11 +1,11 @@
 {
-  "name": "Pollirshad eCommerce",
-  "short_name": "Pollirshad",
-  "description": "Premium rural products marketplace",
+  "name": "পল্লীর স্বাদ - Pollirshad",
+  "short_name": "পল্লীর স্বাদ",
+  "description": "প্রাকৃতিক খাদ্য ও মিষ্টির সমাহার সরাসরি আপনার ডাইনিং টেবিলে।",
   "start_url": "/index.html",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#ea580c",
+  "background_color": "#fdfaf5",
+  "theme_color": "#2d5a27",
   "icons":[
     {
       "src": "https://cdn-icons-png.flaticon.com/512/3502/3502601.png",

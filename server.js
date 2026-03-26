@@ -107,30 +107,92 @@ const Chat = mongoose.model('Chat', ChatSchema);
 // --- SEED INITIAL DATA ---
 async function seedData() {
     try {
+        // Clear existing data
         await Product.deleteMany({});
-        await Product.insertMany([
-            { vendorId: 'v1', name: 'খেজুরের গুড় (পাটালি)', category: 'গুড় ও মধু', price: 350, stock: 50, image: 'images/খেজুরের গুড় (পাটালি)1.jpg' },
-            { vendorId: 'v1', name: 'ঝোলা গুড় (১ কেজি)', category: 'গুড় ও মধু', price: 350, stock: 50, image: 'images/ঝোলা গুড় (১ কেজি)1.jpg' },
-            { vendorId: 'v2', name: 'আখেঁর দানাদার গুড় (১ কেজি)', category: 'গুড় ও মধু', price: 250, stock: 100, image: 'images/আখেঁর দানাদার গুড় (১ কেজি)1.jpg' },
-            { vendorId: 'v2', name: 'চকলেট গুড় (১ কেজি)', category: 'গুড় ও মধু', price: 700, stock: 40, image: 'images/চকলেট গুড় (১ কেজি)1.jpg' },
-            { vendorId: 'v1', name: 'ঘি (১ কেজি)', category: 'গুড় ও মধু', price: 1600, stock: 30, image: 'images/ঘি1.jpg' },
-            { vendorId: 'v1', name: 'ঘি (২৫০ গ্রাম)', category: 'গুড় ও মধু', price: 400, stock: 50, image: 'images/ঘি1.jpg' },
-            { vendorId: 'v2', name: 'সরিষা মধু (১ কেজি)', category: 'গুড় ও মধু', price: 600, stock: 40, image: 'images/সরিষা মধু (১ কেজি)1.jpg' },
-            { vendorId: 'v2', name: 'লিচু ফুলের মধু (১ কেজি)', category: 'গুড় ও মধু', price: 1000, stock: 40, image: 'images/লিচু ফুলের মধু (১ কেজি)1.jpg' },
-            { vendorId: 'v1', name: 'প্রাকৃতিক ফুলের মধু (১ কেজি)', category: 'গুড় ও মধু', price: 1600, stock: 50, image: 'images/প্রাকৃতিক ফুলের মধু (১ কেজি)1.jpg' },
-            { vendorId: 'v1', name: 'সরিষার তেল (১ কেজি)', category: 'তেল ও মসলা', price: 230, stock: 100, image: 'images/সরিষার তেল (১ কেজি)1.jpg' },
-            { vendorId: 'v2', name: 'হলুদ গুড়া (১ কেজি)', category: 'তেল ও মসলা', price: 480, stock: 50, image: 'images/হলুদ.jpg' },
-            { vendorId: 'v2', name: 'হলুদ গুড়া (২৫০ গ্রাম)', category: 'তেল ও মসলা', price: 120, stock: 80, image: 'images/হলুদ.jpg' },
-            { vendorId: 'v1', name: 'মরিচ গুড়া (১ কেজি)', category: 'তেল ও মসলা', price: 600, stock: 50, image: 'images/মরিচ.jpg' },
-            { vendorId: 'v1', name: 'মরিচ গুড়া (২৫০ গ্রাম)', category: 'তেল ও মসলা', price: 150, stock: 80, image: 'images/মরিচ.jpg' },
-            { vendorId: 'v2', name: 'ধনিয়া গুড়া (১ কেজি)', category: 'তেল ও মসলা', price: 450, stock: 60, image: 'images/ধনিয়া গুড়া1.jpg' },
-            { vendorId: 'v2', name: 'ধনিয়া গুড়া (২৫০ গ্রাম)', category: 'তেল ও মসলা', price: 112, stock: 80, image: 'images/ধনিয়া গুড়া1.jpg' },
-            { vendorId: 'v1', name: 'কালোজিরা পোলাও চাল (১ কেজি)', category: 'চাল ও আটা', price: 180, stock: 100, image: 'images/চাল.jpg' },
-            { vendorId: 'v2', name: 'লাল আটা (১ কেজি)', category: 'চাল ও আটা', price: 80, stock: 100, image: 'images/ময়দা.jpg' }
-        ]);
-        console.log('✅ Updated Products Seeded!');
+        
+        // Create sample vendors first
+        const vendor1 = await createVendor('Fresh Local Store', 'Premium local products from our farm');
+        const vendor2 = await createVendor('Quality Groceries', 'Best quality groceries and essentials');
+        
+        // Create products with proper vendor ObjectId references
+        const products = [
+            // Vendor 1 products
+            { vendorId: vendor1._id, vendorName: vendor1.storeName, name: 'খেজুরের গুড় (পাটালি)', category: 'গুড় ও মধু', price: 350, stock: 50, image: 'images/খেজুরের গুড় (পাটালি)1.jpg', description: 'Premium date jaggery, rich in minerals' },
+            { vendorId: vendor1._id, vendorName: vendor1.storeName, name: 'ঝোলা গুড় (১ কেজি)', category: 'গুড় ও মধু', price: 350, stock: 50, image: 'images/ঝোলা গুড় (১ কেজি)1.jpg', description: 'Traditional jaggery with rich flavor' },
+            { vendorId: vendor1._id, vendorName: vendor1.storeName, name: 'ঘি (১ কেজি)', category: 'গুড় ও মধু', price: 1600, stock: 30, image: 'images/ঘি1.jpg', description: 'Pure desi ghee, homemade' },
+            { vendorId: vendor1._id, vendorName: vendor1.storeName, name: 'ঘি (২৫০ গ্রাম)', category: 'গুড় ও মধু', price: 400, stock: 50, image: 'images/ঘি1.jpg', description: 'Pure desi ghee, small pack' },
+            { vendorId: vendor1._id, vendorName: vendor1.storeName, name: 'প্রাকৃতিক ফুলের মধু (১ কেজি)', category: 'গুড় ও মধু', price: 1600, stock: 50, image: 'images/প্রাকৃতিক ফুলের মধু (১ কেজি)1.jpg', description: 'Natural flower honey, pure and healthy' },
+            { vendorId: vendor1._id, vendorName: vendor1.storeName, name: 'সরিষার তেল (১ কেজি)', category: 'তেল ও মসলা', price: 230, stock: 100, image: 'images/সরিষার তেল (১ কেজি)1.jpg', description: 'Cold pressed mustard oil' },
+            { vendorId: vendor1._id, vendorName: vendor1.storeName, name: 'মরিচ গুড়া (১ কেজি)', category: 'তেল ও মসলা', price: 600, stock: 50, image: 'images/মরিচ.jpg', description: 'Premium red chili powder' },
+            { vendorId: vendor1._id, vendorName: vendor1.storeName, name: 'মরিচ গুড়া (২৫০ গ্রাম)', category: 'তেল ও মসলা', price: 150, stock: 80, image: 'images/মরিচ.jpg', description: 'Premium red chili powder, small pack' },
+            { vendorId: vendor1._id, vendorName: vendor1.storeName, name: 'কালোজিরা পোলাও চাল (১ কেজি)', category: 'চাল ও আটা', price: 180, stock: 100, image: 'images/চাল.jpg', description: 'Premium basmati rice for biryani' },
+            
+            // Vendor 2 products
+            { vendorId: vendor2._id, vendorName: vendor2.storeName, name: 'আখেঁর দানাদার গুড় (১ কেজি)', category: 'গুড় ও মধু', price: 250, stock: 100, image: 'images/আখেঁর দানাদার গুড় (১ কেজি)1.jpg', description: 'Granular sugarcane jaggery' },
+            { vendorId: vendor2._id, vendorName: vendor2.storeName, name: 'চকলেট গুড় (১ কেজি)', category: 'গুড় ও মধু', price: 700, stock: 40, image: 'images/চকলেট গুড় (১ কেজি)1.jpg', description: 'Chocolate flavored jaggery' },
+            { vendorId: vendor2._id, vendorName: vendor2.storeName, name: 'সরিষা মধু (১ কেজি)', category: 'গুড় ও মধু', price: 600, stock: 40, image: 'images/সরিষা মধু (১ কেজি)1.jpg', description: 'Mustard flower honey' },
+            { vendorId: vendor2._id, vendorName: vendor2.storeName, name: 'লিচু ফুলের মধু (১ কেজি)', category: 'গুড় ও মধু', price: 1000, stock: 40, image: 'images/লিচু ফুলের মধু (১ কেজি)1.jpg', description: 'Lychee flower honey, premium quality' },
+            { vendorId: vendor2._id, vendorName: vendor2.storeName, name: 'হলুদ গুড়া (১ কেজি)', category: 'তেল ও মসলা', price: 480, stock: 50, image: 'images/হলুদ.jpg', description: 'Premium turmeric powder' },
+            { vendorId: vendor2._id, vendorName: vendor2.storeName, name: 'হলুদ গুড়া (২৫০ গ্রাম)', category: 'তেল ও মসলা', price: 120, stock: 80, image: 'images/হলুদ.jpg', description: 'Premium turmeric powder, small pack' },
+            { vendorId: vendor2._id, vendorName: vendor2.storeName, name: 'ধনিয়া গুড়া (১ কেজি)', category: 'তেল ও মসলা', price: 450, stock: 60, image: 'images/ধনিয়া গুড়া1.jpg', description: 'Premium coriander powder' },
+            { vendorId: vendor2._id, vendorName: vendor2.storeName, name: 'ধনিয়া গুড়া (২৫০ গ্রাম)', category: 'তেল ও মসলা', price: 112, stock: 80, image: 'images/ধনিয়া গুড়া1.jpg', description: 'Premium coriander powder, small pack' },
+            { vendorId: vendor2._id, vendorName: vendor2.storeName, name: 'লাল আটা (১ কেজি)', category: 'চাল ও আটা', price: 80, stock: 100, image: 'images/ময়দা.jpg', description: 'Premium whole wheat flour' }
+        ];
+        
+        await Product.insertMany(products);
+        console.log(`✅ Seeded ${products.length} products successfully!`);
+        console.log(`🏪 Vendor 1: ${vendor1.storeName} (${vendor1._id})`);
+        console.log(`🏪 Vendor 2: ${vendor2.storeName} (${vendor2._id})`);
+        
     } catch (err) {
         console.log("❌ Seeding Error:", err.message);
+    }
+}
+
+// Helper function to create vendors
+async function createVendor(storeName, storeDescription) {
+    try {
+        // Check if vendor already exists
+        const existingVendor = await Vendor.findOne({ storeName });
+        if (existingVendor) {
+            return existingVendor;
+        }
+        
+        // Create a dummy user for the vendor
+        const dummyUser = await User.findOne({ email: `vendor${Date.now()}@pollirshad.com` });
+        let userId;
+        
+        if (!dummyUser) {
+            const newUser = new User({
+                name: storeName,
+                email: `vendor${Date.now()}@pollirshad.com`,
+                phone: `017${Math.floor(10000000 + Math.random() * 90000000)}`,
+                password: 'vendor123',
+                role: 'vendor'
+            });
+            await newUser.save();
+            userId = newUser._id;
+        } else {
+            userId = dummyUser._id;
+        }
+        
+        // Create vendor
+        const vendor = new Vendor({
+            userId: userId,
+            storeName: storeName,
+            storeDescription: storeDescription,
+            bKashNumber: '01700000000',
+            commissionRate: 15,
+            verified: true,
+            totalEarnings: 0
+        });
+        
+        await vendor.save();
+        return vendor;
+        
+    } catch (err) {
+        console.log(`❌ Error creating vendor ${storeName}:`, err.message);
+        throw err;
     }
 }
 

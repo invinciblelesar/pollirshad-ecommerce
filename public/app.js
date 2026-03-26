@@ -7,6 +7,7 @@ if (window.location.pathname === '/' || window.location.pathname === '/index.htm
     loadProducts();
     updateCartUI();
     registerServiceWorker();
+    checkAuth();
 }
 
 // ---- SHOP FRONTEND ----
@@ -243,6 +244,146 @@ function logout() {
     window.location.reload();
 }
 
+// ---- VENDOR MANAGEMENT FUNCTIONS ----
+
+function showVendors() {
+    const main = document.querySelector('main');
+    main.innerHTML = `
+        <div class="space-y-6">
+            <div class="flex justify-between items-center">
+                <h3 class="text-2xl font-bold text-gray-800">ভেন্ডর ম্যানেজমেন্ট</h3>
+                <button onclick="loadAdminData()" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300 transition-colors">
+                    অর্ডারসমূহ
+                </button>
+            </div>
+            
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-50 text-xs uppercase text-gray-500 border-y">
+                            <th class="p-3 font-semibold">ভেন্ডর</th>
+                            <th class="p-3 font-semibold">স্টোর</th>
+                            <th class="p-3 font-semibold">যোগাযোগ</th>
+                            <th class="p-3 font-semibold">ভেরিফিকেশন</th>
+                            <th class="p-3 font-semibold">কমিশন</th>
+                            <th class="p-3 font-semibold">আয়</th>
+                            <th class="p-3 font-semibold">অ্যাকশন</th>
+                        </tr>
+                    </thead>
+                    <tbody id="vendorsTableBody" class="text-sm"></tbody>
+                </table>
+            </div>
+        </div>
+    `;
+    
+    loadVendors();
+}
+
+async function loadVendors() {
+    try {
+        const res = await fetch('/api/admin/vendors', {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
+        });
+        const vendors = await res.json();
+        
+        const tbody = document.getElementById('vendorsTableBody');
+        tbody.innerHTML = vendors.map(v => `
+            <tr class="border-b hover:bg-gray-50 transition-colors">
+                <td class="p-3">
+                    <div class="font-bold text-gray-800">${v.userId.name}</div>
+                    <div class="text-xs text-gray-500 mt-1"><i class="fas fa-envelope"></i> ${v.userId.email}</div>
+                </td>
+                <td class="p-3">
+                    <div class="font-semibold text-[#e76f51]">${v.storeName}</div>
+                    <div class="text-xs text-gray-600">${v.storeDescription || 'No description'}</div>
+                </td>
+                <td class="p-3 text-xs">
+                    <div><i class="fas fa-phone-alt text-gray-500 mr-1"></i> ${v.userId.phone}</div>
+                    <div><i class="fas fa-mobile-alt text-gray-500 mr-1"></i> ${v.bKashNumber || 'N/A'}</div>
+                </td>
+                <td class="p-3">
+                    ${v.verified ? 
+                        '<span class="bg-green-100 text-green-800 border border-green-200 px-2 py-1 rounded text-xs font-semibold">ভেরিফাইড</span>' : 
+                        '<span class="bg-yellow-100 text-yellow-800 border border-yellow-200 px-2 py-1 rounded text-xs font-semibold">অপেক্ষারত</span>'
+                    }
+                </td>
+                <td class="p-3">
+                    <div class="flex items-center gap-2">
+                        <span class="font-bold text-orange-600">${v.commissionRate}%</span>
+                        <input type="number" id="commission-${v._id}" value="${v.commissionRate}" class="w-16 p-1 border border-gray-300 rounded text-xs" min="0" max="50">
+                        <button onclick="updateCommission('${v._id}')" class="bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600 transition-colors">আপডেট</button>
+                    </div>
+                </td>
+                <td class="p-3 font-bold text-green-600">৳ ${v.totalEarnings}</td>
+                <td class="p-3">
+                    ${!v.verified ? 
+                        `<button onclick="approveVendor('${v._id}')" class="bg-green-500 text-white px-3 py-1 rounded text-xs hover:bg-green-600 transition-colors">অনুমোদন</button>` : 
+                        `<span class="text-green-600 text-xs">অনুমোদিত</span>`
+                    }
+                </td>
+            </tr>
+        `).join('');
+    } catch (err) {
+        console.error("Failed to load vendors:", err);
+        alert("ভেন্ডর লোড করতে সমস্যা হয়েছে।");
+    }
+}
+
+async function approveVendor(vendorId) {
+    try {
+        const res = await fetch(`/api/admin/vendors/${vendorId}/approve`, {
+            method: 'PUT',
+            headers: { 
+                'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const data = await res.json();
+        
+        if (res.ok) {
+            alert('ভেন্ডর অনুমোদন করা হয়েছে!');
+            loadVendors();
+        } else {
+            alert(data.message || 'ভেন্ডর অনুমোদন ব্যর্থ হয়েছে');
+        }
+    } catch (err) {
+        alert("সার্ভার এরর, আবার চেষ্টা করুন");
+    }
+}
+
+async function updateCommission(vendorId) {
+    const input = document.getElementById(`commission-${vendorId}`);
+    const commissionRate = parseInt(input.value);
+    
+    if (isNaN(commissionRate) || commissionRate < 0 || commissionRate > 50) {
+        alert('কমিশন রেট ০-৫০% এর মধ্যে হতে হবে');
+        return;
+    }
+    
+    try {
+        const res = await fetch(`/api/admin/vendors/${vendorId}/commission`, {
+            method: 'PUT',
+            headers: { 
+                'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ commissionRate })
+        });
+        
+        const data = await res.json();
+        
+        if (res.ok) {
+            alert('কমিশন রেট আপডেট করা হয়েছে!');
+            loadVendors();
+        } else {
+            alert(data.message || 'কমিশন রেট আপডেট ব্যর্থ হয়েছে');
+        }
+    } catch (err) {
+        alert("সার্ভার এরর, আবার চেষ্টা করুন");
+    }
+}
+
 // ---- NEW: DELETE ALL ORDERS RESET BUTTON ----
 async function clearAllOrders() {
     if(!confirm("আপনি কি নিশ্চিত যে আপনি সমস্ত ডেমো অর্ডার মুছে ফেলতে চান? এটি আর ফিরে পাওয়া যাবে না।")) return;
@@ -375,5 +516,232 @@ async function updateOrderStatus(id, status) {
 function registerServiceWorker() {
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js').then(() => console.log('✅ PWA SW Registered'));
+    }
+}
+
+// ---- AUTHENTICATION FUNCTIONS ----
+
+function checkAuth() {
+    const token = localStorage.getItem('customerToken');
+    if (token) {
+        // User is logged in
+        updateAuthUI(true);
+    } else {
+        // User is not logged in
+        updateAuthUI(false);
+    }
+}
+
+function updateAuthUI(isLoggedIn) {
+    const authButtons = document.querySelector('.flex.gap-4.sm\\:gap-6.items-center');
+    if (!authButtons) return;
+    
+    if (isLoggedIn) {
+        authButtons.innerHTML = `
+            <a href="#" onclick="logoutCustomer()" class="hover:text-orange-200 text-sm font-semibold flex items-center gap-1 transition-colors pl-2 sm:border-l border-green-800">
+                <i class="fas fa-user-circle"></i> <span class="hidden sm:inline">লগআউট</span>
+            </a>
+            <button onclick="toggleCart()" class="relative flex items-center gap-1 hover:text-orange-200 transition-colors">
+                <i class="fas fa-shopping-cart text-xl"></i>
+                <span id="cartCount" class="absolute -top-2 -right-3 bg-red-500 text-white text-[10px] font-bold rounded-full px-2 py-0.5 shadow-sm border border-orange-600">0</span>
+            </button>
+        `;
+    } else {
+        authButtons.innerHTML = `
+            <a href="#" onclick="showLoginModal()" class="hover:text-orange-200 text-sm font-semibold flex items-center gap-1 transition-colors pl-2 sm:border-l border-green-800">
+                <i class="fas fa-user"></i> <span class="hidden sm:inline">লগইন/রেজিস্টার</span>
+            </a>
+            <button onclick="toggleCart()" class="relative flex items-center gap-1 hover:text-orange-200 transition-colors">
+                <i class="fas fa-shopping-cart text-xl"></i>
+                <span id="cartCount" class="absolute -top-2 -right-3 bg-red-500 text-white text-[10px] font-bold rounded-full px-2 py-0.5 shadow-sm border border-orange-600">0</span>
+            </button>
+        `;
+    }
+}
+
+function showLoginModal() {
+    const modal = document.createElement('div');
+    modal.innerHTML = `
+        <div id="authModal" class="fixed inset-0 bg-gray-900 bg-opacity-70 flex items-center justify-center z-[60] p-4">
+            <div class="bg-white p-6 rounded-xl w-full max-w-lg">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold text-gray-800">গ্রাহক লগইন/রেজিস্টার</h2>
+                    <button onclick="hideAuthModal()" class="text-gray-400 hover:text-red-500 text-2xl">&times;</button>
+                </div>
+                
+                <div class="space-y-4">
+                    <button onclick="showCustomerLogin()" class="w-full bg-[#2d5a27] text-white py-3 rounded-md hover:bg-green-800 transition-colors">
+                        লগইন
+                    </button>
+                    <button onclick="showCustomerRegister()" class="w-full bg-gray-200 text-gray-800 py-3 rounded-md hover:bg-gray-300 transition-colors">
+                        রেজিস্টার
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+function hideAuthModal() {
+    const modal = document.getElementById('authModal');
+    if (modal) modal.remove();
+}
+
+function showCustomerLogin() {
+    const modal = document.getElementById('authModal');
+    if (!modal) return;
+    
+    modal.innerHTML = `
+        <div class="bg-white p-6 rounded-xl w-full max-w-lg">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-gray-800">গ্রাহক লগইন</h2>
+                <button onclick="hideAuthModal()" class="text-gray-400 hover:text-red-500 text-2xl">&times;</button>
+            </div>
+            
+            <form id="customerLoginForm">
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">ইমেইল বা ফোন</label>
+                    <input type="text" id="customerUser" placeholder="আপনার ইমেইল বা ফোন নম্বর" class="w-full p-3 border border-gray-300 rounded focus:outline-none focus:border-[#2d5a27] focus:ring-1 focus:ring-[#2d5a27] bg-gray-50">
+                </div>
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">পাসওয়ার্ড</label>
+                    <input type="password" id="customerPass" placeholder="আপনার পাসওয়ার্ড" class="w-full p-3 border border-gray-300 rounded focus:outline-none focus:border-[#2d5a27] focus:ring-1 focus:ring-[#2d5a27] bg-gray-50">
+                </div>
+                
+                <div class="flex gap-3">
+                    <button type="submit" class="flex-1 bg-[#2d5a27] text-white py-3 rounded font-bold hover:bg-green-800 transition duration-200 shadow-md">
+                        লগইন করুন
+                    </button>
+                    <button type="button" onclick="showCustomerRegister()" class="flex-1 bg-gray-200 text-gray-800 py-3 rounded font-bold hover:bg-gray-300 transition duration-200 shadow-md">
+                        রেজিস্টার
+                    </button>
+                </div>
+                
+                <div id="customerAuthMessage" class="mt-4 text-center text-sm"></div>
+            </form>
+        </div>
+    `;
+    
+    document.getElementById('customerLoginForm').addEventListener('submit', customerLogin);
+}
+
+function showCustomerRegister() {
+    const modal = document.getElementById('authModal');
+    if (!modal) return;
+    
+    modal.innerHTML = `
+        <div class="bg-white p-6 rounded-xl w-full max-w-lg">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-gray-800">গ্রাহক রেজিস্ট্রেশন</h2>
+                <button onclick="hideAuthModal()" class="text-gray-400 hover:text-red-500 text-2xl">&times;</button>
+            </div>
+            
+            <form id="customerRegisterForm">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">নাম</label>
+                        <input type="text" id="regName" required class="w-full p-3 border border-gray-300 rounded focus:outline-none focus:border-[#2d5a27]">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">ইমেইল</label>
+                        <input type="email" id="regEmail" required class="w-full p-3 border border-gray-300 rounded focus:outline-none focus:border-[#2d5a27]">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">ফোন</label>
+                        <input type="tel" id="regPhone" required class="w-full p-3 border border-gray-300 rounded focus:outline-none focus:border-[#2d5a27]">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">পাসওয়ার্ড</label>
+                        <input type="password" id="regPassword" required class="w-full p-3 border border-gray-300 rounded focus:outline-none focus:border-[#2d5a27]">
+                    </div>
+                </div>
+                
+                <div class="flex gap-3 mt-6">
+                    <button type="submit" class="flex-1 bg-[#2d5a27] text-white py-3 rounded-md hover:bg-green-800 transition-colors">রেজিস্টার</button>
+                    <button type="button" onclick="showCustomerLogin()" class="flex-1 bg-gray-200 text-gray-800 py-3 rounded-md hover:bg-gray-300 transition-colors">লগইন</button>
+                </div>
+                
+                <div id="customerRegMessage" class="mt-4 text-center text-sm"></div>
+            </form>
+        </div>
+    `;
+    
+    document.getElementById('customerRegisterForm').addEventListener('submit', customerRegister);
+}
+
+async function customerLogin(e) {
+    e.preventDefault();
+    const email = document.getElementById('customerUser').value;
+    const password = document.getElementById('customerPass').value;
+    const messageEl = document.getElementById('customerAuthMessage');
+    
+    if (!email || !password) {
+        messageEl.innerHTML = '<span class="text-red-500">সবগুলো ফিল্ড পূরণ করুন</span>';
+        return;
+    }
+    
+    try {
+        const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+        
+        const data = await res.json();
+        
+        if (res.ok && data.user.role === 'customer') {
+            localStorage.setItem('customerToken', data.token);
+            hideAuthModal();
+            updateAuthUI(true);
+            alert('স্বাগতম ' + data.user.name + '!');
+        } else {
+            messageEl.innerHTML = `<span class="text-red-500">${data.message || 'লগইন ব্যর্থ হয়েছে'}</span>`;
+        }
+    } catch (err) {
+        messageEl.innerHTML = '<span class="text-red-500">সার্ভার এরর, আবার চেষ্টা করুন</span>';
+    }
+}
+
+async function customerRegister(e) {
+    e.preventDefault();
+    const name = document.getElementById('regName').value;
+    const email = document.getElementById('regEmail').value;
+    const phone = document.getElementById('regPhone').value;
+    const password = document.getElementById('regPassword').value;
+    const messageEl = document.getElementById('customerRegMessage');
+    
+    if (!name || !email || !phone || !password) {
+        messageEl.innerHTML = '<span class="text-red-500">সবগুলো ফিল্ড পূরণ করুন</span>';
+        return;
+    }
+    
+    try {
+        const res = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, email, phone, password, role: 'customer' })
+        });
+        
+        const data = await res.json();
+        
+        if (res.ok) {
+            messageEl.innerHTML = '<span class="text-green-500">রেজিস্ট্রেশন সফল হয়েছে! এখন লগইন করুন।</span>';
+            setTimeout(() => {
+                showCustomerLogin();
+            }, 2000);
+        } else {
+            messageEl.innerHTML = `<span class="text-red-500">${data.message || 'রেজিস্ট্রেশন ব্যর্থ হয়েছে'}</span>`;
+        }
+    } catch (err) {
+        messageEl.innerHTML = '<span class="text-red-500">সার্ভার এরর, আবার চেষ্টা করুন</span>';
+    }
+}
+
+function logoutCustomer() {
+    if (confirm('আপনি কি নিশ্চিত যে আপনি লগআউট করতে চান?')) {
+        localStorage.removeItem('customerToken');
+        updateAuthUI(false);
+        alert('সফলভাবে লগআউট হয়েছে!');
     }
 }

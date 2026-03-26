@@ -156,9 +156,57 @@
             overlay.classList.toggle('hidden');
         }
 
+        // Check if admin is already logged in
         if(localStorage.getItem('adminToken')) {
             document.getElementById('loginScreen').classList.add('hidden');
             loadAdminData();
+        }
+
+        // Admin Login Function
+        async function adminLogin() {
+            const username = document.getElementById('adminUser').value;
+            const password = document.getElementById('adminPass').value;
+
+            if (!username || !password) {
+                alert('অনুগ্রহ করে ইউজারনেম এবং পাসওয়ার্ড দুটোই পূরণ করুন।');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/auth/admin-login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: username,
+                        password: password
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    localStorage.setItem('adminToken', data.token);
+                    localStorage.setItem('adminUser', JSON.stringify(data.user));
+                    document.getElementById('loginScreen').classList.add('hidden');
+                    loadAdminData();
+                } else {
+                    alert(data.message || 'লগইন ব্যর্থ হয়েছে। অনুগ্রহ করে ইমেইল এবং পাসওয়ার্ড পুনরায় পরীক্ষা করুন।');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('লগইন প্রক্রিয়ায় ত্রুটি ঘটেছে। অনুগ্রহ করে আবার চেষ্টা করুন।');
+            }
+        }
+
+        // Admin Logout Function
+        function logout() {
+            localStorage.removeItem('adminToken');
+            localStorage.removeItem('adminUser');
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('adminUser').value = '';
+            document.getElementById('adminPass').value = '';
         }
     </script>
 </body>

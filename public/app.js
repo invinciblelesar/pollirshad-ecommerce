@@ -130,7 +130,14 @@ async function placeOrder() {
         paymentMethod: document.getElementById('paymentMethod').value,
         senderPhone: document.getElementById('senderPhone') ? document.getElementById('senderPhone').value.trim() : '',
         trxId: document.getElementById('trxId') ? document.getElementById('trxId').value.trim() : '',
-        items: cart,
+        items: cart.map(item => ({
+            vendorId: item.vendorId,
+            vendorName: item.vendorName,
+            name: item.name,
+            price: item.price,
+            qty: item.qty,
+            category: item.category
+        })),
         total: cart.reduce((s, i) => s + (i.price * i.qty), 0)
     };
     
@@ -215,6 +222,8 @@ function sendMessage() {
 // ---- ADMIN DASHBOARD LOGIC ----
 // ============================================
 
+// Admin Login Function (already defined in admin.html)
+// This is kept for backward compatibility
 async function adminLogin() {
     const u = document.getElementById('adminUser').value;
     const p = document.getElementById('adminPass').value;
@@ -232,7 +241,7 @@ async function adminLogin() {
             document.getElementById('loginScreen').classList.add('hidden');
             loadAdminData();
         } else { 
-            alert("ভুল ইউজারনেম বা পাসওয়ার্ড!"); 
+            alert("ভুল ইউজারনেম বা পাসওয়ার্ড!"); 
         }
     } catch(err) {
         alert("সার্ভার এরর।");

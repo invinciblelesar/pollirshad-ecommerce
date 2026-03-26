@@ -225,12 +225,15 @@ app.post('/api/auth/register', async (req, res) => {
             return res.status(400).json({ message: 'User with this email or phone already exists' });
         }
         
+        // Hash password
+        const hashedPassword = await bcrypt.hash(password, 10);
+        
         // Create new user
         const newUser = new User({
             name,
             email,
             phone,
-            password, // In production, hash this password
+            password: hashedPassword,
             role: role || 'customer'
         });
         
@@ -266,7 +269,13 @@ app.post('/api/auth/login', async (req, res) => {
             ]
         });
         
-        if (!user || user.password !== password) {
+        if (!user) {
+            return res.status(401).json({ message: 'Invalid credentials' });
+        }
+        
+        // Compare password using bcrypt
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
         
@@ -322,14 +331,45 @@ app.get('/api/auth/profile', authenticateToken, async (req, res) => {
     }
 });
 
-// Admin login (legacy for backward compatibility)
-app.post('/api/auth/admin-login', (req, res) => {
-    const { username, password } = req.body;
-    if (username === 'Rasel' && password === '12345#') {
-        const token = jwt.sign({ id: 'admin1', role: 'admin', name: 'Rasel' }, JWT_SECRET);
-        return res.json({ token, role: 'admin', message: 'Admin login successful' });
+// Admin login (proper authentication)
+app.post('/api/auth/admin-login', async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        
+        // Find admin user by email
+        const adminUser = await User.findOne({ email: email, role: 'admin' });
+        
+        if (!adminUser) {
+            return res.status(401).json({ message: 'Invalid admin credentials' });
+        }
+        
+        // Compare password using bcrypt
+        const isPasswordValid = await bcrypt.compare(password, adminUser.password);
+        if (!isPasswordValid) {
+            return res.status(401).json({ message: 'Invalid admin credentials' });
+        }
+        
+        const token = jwt.sign(
+            { id: adminUser._id, role: adminUser.role, name: adminUser.name, email: adminUser.email },
+            JWT_SECRET,
+            { expiresIn: '24h' }
+        );
+        
+        res.json({ 
+            token, 
+            user: {
+                id: adminUser._id,
+                name: adminUser.name,
+                email: adminUser.email,
+                phone: adminUser.phone,
+                role: adminUser.role,
+                verified: adminUser.verified
+            },
+            message: 'Admin login successful' 
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
-    res.status(401).json({ message: 'Invalid credentials' });
 });
 
 // Get all products (for customer frontend)
